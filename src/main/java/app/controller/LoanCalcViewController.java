@@ -98,7 +98,7 @@ public class LoanCalcViewController implements Initializable {
 		double periodInterest = dInterestRate / periodsPerYear; 
 		int numOfPeriods   = (int) (dNbrOfYears * periodsPerYear);
 		double monthlyPayment = -(pmt(periodInterest, numOfPeriods, dLoanAmount));
-		System.out.println("Monthly Payment:    \n\n" + monthlyPayment);
+		System.out.println("Monthly Payment:    " + monthlyPayment + "\n\n");
 		double totalPayment   = 0;
 		double totalInterest  = 0;
 		double estInterestSavings = numOfPeriods * monthlyPayment;
