@@ -8,15 +8,13 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+@SuppressWarnings("restriction")
 public class TableViewHandler {
   @FXML
   private TableView loanTable;
   
-  @SuppressWarnings("restriction")
-  public ObservableList<LoanPeriod> loanPeriod = 
-      FXCollections.observableArrayList(
-          new LoanPeriod("Jacob", "Smith", "jacob.smith@example.com", "1", "1", "1", "1"),
-          new LoanPeriod("Isabella", "Johnson", "isabella.johnson@example.com", "1", "1", "1", "1"));
+  private ObservableList<LoanPeriod> loanPeriod = 
+      FXCollections.observableArrayList();
   
   public TableViewHandler(TableView lt){
     this.loanTable = lt;
@@ -44,8 +42,13 @@ public class TableViewHandler {
     
     TableColumn temp6 = (TableColumn) loanTable.getColumns().get(6);
     temp6.setCellValueFactory(new PropertyValueFactory<LoanPeriod, String>("balance"));
-    
-    loanTable.setItems(loanPeriod);
-    loanTable.getColumns().addAll(temp, temp1, temp2, temp3, temp4, temp5, temp6);
   }
-}
+  
+  public void loadTableViewHandler() {
+	  loanTable.setItems(loanPeriod);
+  }
+  
+  public void addLoan(LoanPeriod lp) {
+	  loanPeriod.add(lp);
+  }
+}	

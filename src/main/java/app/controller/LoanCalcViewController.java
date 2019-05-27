@@ -1,16 +1,20 @@
 package app.controller;
 
-import app.StudentCalc;
+import app.*;
+import app.controller.*;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 import javafx.fxml.Initializable;
 import javafx.event.ActionEvent;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.TableView;
 
+@SuppressWarnings("restriction")
 public class LoanCalcViewController implements Initializable {
 
 	private StudentCalc SC = null;
@@ -36,6 +40,15 @@ public class LoanCalcViewController implements Initializable {
 	@FXML
 	private Label lblTotalInterest;
 	
+	@FXML
+	private Label lblRatePerPeriod;
+	
+	@FXML
+	private Label lblEstInterestSavings;
+	
+	@FXML
+	private TableView loanTable;
+	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 	}
@@ -52,7 +65,10 @@ public class LoanCalcViewController implements Initializable {
 	 */
 	@FXML
 	private void btnCalcLoan(ActionEvent event) {
-
+		TableViewHandler tvh = new TableViewHandler(loanTable);
+		tvh.initTableViewHandler();
+		
+		
 		// Read input value
 		double dLoanAmount = Double.parseDouble(LoanAmount.getText());
 		double dInterestRate = 0;
@@ -63,7 +79,11 @@ public class LoanCalcViewController implements Initializable {
 			dInterestRate = Double.parseDouble(sInterestRate);
 		}
 		double dNbrOfYears = Double.parseDouble(NbrOfYears.getText());
-		double dAdditionalPayment = Double.parseDouble(AdditionalPayment.getText());
+		double dAdditionalPayment = 0;
+		try {
+			dAdditionalPayment = Double.parseDouble(AdditionalPayment.getText());
+		} catch (Exception e) {
+		}
 		LocalDate localDate = PaymentStartDate.getValue();
 		
 		// Print out input values on the console
@@ -74,20 +94,18 @@ public class LoanCalcViewController implements Initializable {
 		System.out.println("Payment Start Date: " + localDate);
 		
 		// Obtain the basic information for calculation
-		
 		double periodsPerYear = 12;
 		double periodInterest = dInterestRate / periodsPerYear; 
 		int numOfPeriods   = (int) (dNbrOfYears * periodsPerYear);
 		double monthlyPayment = -(pmt(periodInterest, numOfPeriods, dLoanAmount));
-		System.out.println("Monthly Payment:    " + monthlyPayment);
-		double totalPayment   = monthlyPayment * numOfPeriods;
-		double totalInterest  = totalPayment - dLoanAmount;
-		lblTotalPayemnts.setText(String.format("%.2f", totalPayment));
-		lblTotalInterest.setText(String.format("%.2f", totalInterest));
+		System.out.println("Monthly Payment:    \n\n" + monthlyPayment);
+		double totalPayment   = 0;
+		double totalInterest  = 0;
+		double estInterestSavings = numOfPeriods * monthlyPayment;
 		
 		// Initialize parameters for calculation
 		int PaymentNum    = 1;
-		DatePicker DueDate = null;
+		DatePicker DueDate = new DatePicker();
 		double Payment    = monthlyPayment;
 		double Interest   = ipmt(periodInterest, PaymentNum, numOfPeriods, -dLoanAmount);
 		double Principle  = ppmt(periodInterest, PaymentNum, numOfPeriods, -dLoanAmount);
@@ -95,7 +113,7 @@ public class LoanCalcViewController implements Initializable {
 		
 		// Calculation
 		for (; Balance > 0; PaymentNum++) {
-			DueDate.setValue(localDate.plusDays(30 * (PaymentNum - 1)));
+			DueDate.setValue(localDate.plusMonths(PaymentNum - 1));
 			Interest  = ipmt(periodInterest, 1, numOfPeriods, -Balance);
 			Principle = Payment - Interest + dAdditionalPayment;
 			if ((Balance + Interest) < Payment) {
@@ -105,7 +123,28 @@ public class LoanCalcViewController implements Initializable {
 			} else {
 				Balance   = Balance - Principle;
 			}
+			totalPayment  += Interest + Principle;
+			totalInterest += Interest;
+			
+			// Add LoanPeriod into ArrayList:loanPeriod
+			LoanPeriod lp = new LoanPeriod(
+					String.valueOf(PaymentNum), 
+					DueDate.getValue().format(DateTimeFormatter.ofPattern("MM-dd-yy")),
+					String.format("%.2f", Payment),
+					String.format("%.2f", dAdditionalPayment),
+					String.format("%.2f", Interest),
+					String.format("%.2f", Principle),
+					String.format("%.2f", Balance));
+			tvh.addLoan(lp);
 		}
+		
+		// Load LabelView and TableView
+		estInterestSavings -= (totalInterest + dLoanAmount);
+		lblTotalPayemnts.setText(String.format("%.2f", totalPayment));
+		lblTotalInterest.setText(String.format("%.2f", totalInterest));
+		lblRatePerPeriod.setText(String.format("%.3f", periodInterest * 100.0) + " %");
+		lblEstInterestSavings.setText(String.format("%.2f", estInterestSavings));
+		tvh.loadTableViewHandler();
 	}
 
 	// Helper Functions on PMT, IPMT, PPMT
